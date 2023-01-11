@@ -1,0 +1,27 @@
+{
+	"name": "collision-testing",
+	"version": "1.0.0",
+	"description": "Testing repository for collision detection algorithms in TypeScrpt for easier experimenting",
+	"main": "build/index.js",
+	"scripts": {
+		"dev": "tsc --watch",
+		"compile": "tsc;"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/nitron-gaming/collision-testing.git"
+	},
+	"keywords": [],
+	"author": "Zac Waite, Hargun Mujral",
+	"license": "ISC",
+	"dependencies": {
+		"typescript": "^4.6.4"
+	},
+	"bugs": {
+		"url": "https://github.com/nitron-gaming/collision-testing/issues"
+	},
+	"homepage": "https://github.com/nitron-gaming/collision-testing",
+	"exclude": [
+		"node_modules"
+	]
+}
