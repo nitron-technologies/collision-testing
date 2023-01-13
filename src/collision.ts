@@ -69,7 +69,17 @@ export const absmin = (a: number, b: number, c: number, d: number): boolean => {
 
 export const rect_triangle_collision = (rect: Rect, triangle: Triangle): CollisionDisplacement|null => {
 	const collision = checkTriangleCollision(rect, triangle)
-	return collision ? new CollisionDisplacement(0, 1) : null
+	if(collision) {
+		const edges = getEdges(triangle)
+		const displacements = edges.map(edge => {
+			return intersect(rect, edge)
+		})
+		const min = displacements.reduce((prev, curr) => {
+			return Math.abs(prev.x) + Math.abs(prev.y) < Math.abs(curr.x) + Math.abs(curr.y) ? prev : curr
+		})
+		return new CollisionDisplacement(min.x, min.y)
+	}
+	return null
 }
 
 export const checkTriangleCollision = (rect: Rect, triangle: Triangle): boolean => {
@@ -81,7 +91,7 @@ export const checkTriangleCollision = (rect: Rect, triangle: Triangle): boolean 
 	return false
 }
 
-export const intersect = (rect: Rect, edge: Point[]): boolean => {
+export const intersect = (rect: Rect, edge: Point[]): Point => {
 	const a1 = edge[1].y - edge[0].y
 	const b1 = edge[0].x - edge[1].x
 	const c1 = a1 * edge[0].x + b1 * edge[0].y
@@ -92,12 +102,16 @@ export const intersect = (rect: Rect, edge: Point[]): boolean => {
 
 	const d = a1 * b2 - a2 * b1
 
-	if(d == 0) return false
+	if(d == 0) return {x: 0, y: 0}
 
 	const x = (b2 * c1 - b1 * c2) / d
 	const y = (a1 * c2 - a2 * c1) / d
 
-	return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h
+	const diff = { x: x, y: y}
+
+	// The below is failing
+	return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h ? 
+		Overlap(rect, edge, diff) : {x: 0, y: 0}
 
 }
 
@@ -107,5 +121,18 @@ export const getEdges = (triangle : Triangle) => {
 		[triangle.p2, triangle.p3],
 		[triangle.p3, triangle.p1]
 	]
+}
+
+export const Overlap = (rect: Rect, edge: Point[], diff: any): Point => {
+
+	let xOverlap = 0
+	let yOverlap = 0
+
+	if(rect.x < edge[0].x ) xOverlap = diff.x - rect.x
+	else xOverlap = rect.x + rect.w - diff.x
+	if (rect.y < edge[0].y) yOverlap = diff.y - rect.y
+	else yOverlap = rect.y + rect.h - diff.y
+
+	return {x: xOverlap, y: yOverlap}
 }
 
