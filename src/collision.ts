@@ -1,4 +1,4 @@
-import { Rect, Triangle } from './shapes.js'
+import { Rect, Triangle, Point } from './shapes.js'
 
 export class CollisionDisplacement {
 	constructor(
@@ -6,6 +6,7 @@ export class CollisionDisplacement {
 		public y:number
 	) {}
 }
+
 
 export const rect_rect_collision = (rect1: Rect, rect2: Rect): CollisionDisplacement|null => {
 	
@@ -35,12 +36,12 @@ export const rect_rect_collision = (rect1: Rect, rect2: Rect): CollisionDisplace
 
 	// null
 
-	const iscollision = (rect1.y + rect1.h) < rect2.y ||
+	const noCollision = (rect1.y + rect1.h) < rect2.y ||
 		rect1.y > (rect2.y + rect2.h) ||
 		(rect1.x + rect1.w) < rect2.x ||
 		rect1.x > (rect2.x + rect2.w) 
 
-	if (!iscollision) {
+	if (!noCollision) {
 
 		const xOverlap = Math.max(0, Math.min(rect1.x + rect1.w, rect2.x + rect2.w) - Math.max(rect1.x, rect2.x))
 		const yOverlap = Math.max(0, Math.min(rect1.y + rect1.h, rect2.y + rect2.h) - Math.max(rect1.y, rect2.y))
@@ -57,6 +58,7 @@ export const rect_rect_collision = (rect1: Rect, rect2: Rect): CollisionDisplace
 
 	}
 
+	return null
 
 
 }
@@ -66,5 +68,44 @@ export const absmin = (a: number, b: number, c: number, d: number): boolean => {
 }
 
 export const rect_triangle_collision = (rect: Rect, triangle: Triangle): CollisionDisplacement|null => {
-	return null
+	const collision = checkTriangleCollision(rect, triangle)
+	return collision ? new CollisionDisplacement(0, 1) : null
 }
+
+export const checkTriangleCollision = (rect: Rect, triangle: Triangle): boolean => {
+	const edges = getEdges(triangle)
+	for (const edge of edges) {
+		if(intersect(rect, edge))
+			return true
+	}
+	return false
+}
+
+export const intersect = (rect: Rect, edge: Point[]): boolean => {
+	const a1 = edge[1].y - edge[0].y
+	const b1 = edge[0].x - edge[1].x
+	const c1 = a1 * edge[0].x + b1 * edge[0].y
+	
+	const a2 = -b1
+	const b2 = a1
+	const c2 = a2 * rect.x + b2 * rect.y
+
+	const d = a1 * b2 - a2 * b1
+
+	if(d == 0) return false
+
+	const x = (b2 * c1 - b1 * c2) / d
+	const y = (a1 * c2 - a2 * c1) / d
+
+	return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h
+
+}
+
+export const getEdges = (triangle : Triangle) => {
+	return [
+		[triangle.p1, triangle.p2],
+		[triangle.p2, triangle.p3],
+		[triangle.p3, triangle.p1]
+	]
+}
+
