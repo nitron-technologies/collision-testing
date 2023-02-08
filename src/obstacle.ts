@@ -1,4 +1,4 @@
-import { CollisionDisplacement, rect_rect_collision, rect_triangle_collision } from "./collision.js";
+import { CollisionDisplacement, rect_rect_collision, rect_tri_collision } from "./collision.js";
 import { P, Rect, Triangle } from "./shapes.js";
 
 class RectObstacle {
@@ -23,7 +23,7 @@ class TriangleObstacle {
 		this.triangle.draw(ctx, this.color)
 	}
 	collide(rect: Rect):CollisionDisplacement|null {
-		return rect_triangle_collision(rect, this.triangle)
+		return rect_tri_collision(rect, this.triangle)
 	}
 }
 
