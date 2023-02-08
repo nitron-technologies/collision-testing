@@ -99,12 +99,15 @@ const check_tri_rect_lines = (rect: Rect, triangle: Triangle): boolean => {
 export const rect_tri_collision = (rect: Rect, triangle: Triangle): CollisionDisplacement|null => {
 	const collision = check_tri_rect_lines(rect, triangle)
 	if (collision) {
-		const rectCenter = {x: rect.x + rect.w / 2, y: rect.y + rect.h / 2}
+	const rectCenter = {x: rect.x + rect.w / 2, y: rect.y + rect.h / 2}
 		const triCenter = {x: (triangle.p1.x + triangle.p2.x + triangle.p3.x) / 3, y: (triangle.p1.y + triangle.p2.y + triangle.p3.y) / 3}
 		const diff = {x: triCenter.x - rectCenter.x, y: triCenter.y - rectCenter.y}
-		return new CollisionDisplacement(diff.x, diff.y)
-		// return new CollisionDisplacement(1, 1)
+		// scale the difference vector so the squared length is equal to the diagonal length of the rect
+		const diffLength = Math.sqrt((diff.x * diff.x + diff.y * diff.y) /( rect.w * Math.sqrt(2) ))
+		const diffx = diff.x / diffLength
+		const diffy = diff.y / diffLength
+
+		return new CollisionDisplacement(diffx, diffy)	
 	}
 	return null
 }
-
