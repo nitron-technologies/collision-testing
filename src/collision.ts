@@ -10,31 +10,6 @@ export class CollisionDisplacement {
 
 export const rect_rect_collision = (rect1: Rect, rect2: Rect): CollisionDisplacement|null => {
 	
-	// const dleft = rect1.x - (rect2.x + rect2.w)
-	// const dright = (rect1.x + rect1.w) - rect2.x
-	// const dtop = rect1.y - (rect2.y + rect2.h)
-	// const dbottom = (rect1.y + rect1.h) - rect2.y
-
-	
-	// return (rect1.y + rect1.h) < rect2.y || 
-	// 	rect1.y > (rect2.y + rect2.h) || 
-	// 	(rect1.x + rect1.w) < rect2.x || 
-	// 	rect1.x > (rect2.x + rect2.w) ? 
-	// null : 
-	
-	// absmin(dleft, dright, dtop, dbottom) ?
-	// new CollisionDisplacement(dleft, 0) :
-
-	// absmin(dright, dleft, dtop, dbottom) ?
-	// new CollisionDisplacement(dright, 0) :
-
-	// absmin(dtop, dleft, dright, dbottom) ?
-	// new CollisionDisplacement(0, dtop) :
-
-	// absmin(dbottom, dleft, dright, dtop) ?
-	// new CollisionDisplacement(0, dbottom) :
-
-	// null
 
 	const noCollision = (rect1.y + rect1.h) < rect2.y ||
 		rect1.y > (rect2.y + rect2.h) ||
@@ -63,59 +38,7 @@ export const rect_rect_collision = (rect1: Rect, rect2: Rect): CollisionDisplace
 
 }
 
-export const absmin = (a: number, b: number, c: number, d: number): boolean => {
-	return Math.abs(a) == Math.min(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d)) ? true : false
-}
-
-export const rect_triangle_collision = (rect: Rect, triangle: Triangle): CollisionDisplacement|null => {
-	const collision = checkTriangleCollision(rect, triangle)
-	if(collision) {
-		const edges = getEdges(triangle)
-		const displacements = edges.map(edge => {
-			return intersect(rect, edge)
-		})
-		const min = displacements.reduce((prev, curr) => {
-			return Math.abs(prev.x) + Math.abs(prev.y) < Math.abs(curr.x) + Math.abs(curr.y) ? prev : curr
-		})
-		return new CollisionDisplacement(min.x, min.y)
-	}
-	return null
-}
-
-export const checkTriangleCollision = (rect: Rect, triangle: Triangle): boolean => {
-	const edges = getEdges(triangle)
-	for (const edge of edges) {
-		if(intersect(rect, edge))
-			return true
-	}
-	return false
-}
-
-export const intersect = (rect: Rect, edge: Point[]): Point => {
-	const a1 = edge[1].y - edge[0].y
-	const b1 = edge[0].x - edge[1].x
-	const c1 = a1 * edge[0].x + b1 * edge[0].y
-	
-	const a2 = -b1
-	const b2 = a1
-	const c2 = a2 * rect.x + b2 * rect.y
-
-	const d = a1 * b2 - a2 * b1
-
-	if(d == 0) return {x: 0, y: 0}
-
-	const x = (b2 * c1 - b1 * c2) / d
-	const y = (a1 * c2 - a2 * c1) / d
-
-	const diff = { x: x, y: y}
-
-	// The below is failing
-	return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h ? 
-		Overlap(rect, edge, diff) : {x: 0, y: 0}
-
-}
-
-export const getEdges = (triangle : Triangle) => {
+const getEdges = (triangle : Triangle) => {
 	return [
 		[triangle.p1, triangle.p2],
 		[triangle.p2, triangle.p3],
@@ -123,16 +46,65 @@ export const getEdges = (triangle : Triangle) => {
 	]
 }
 
-export const Overlap = (rect: Rect, edge: Point[], diff: any): Point => {
+const getRectLines = (rect: Rect): Point[][] => {
+	return [
+		[{x: rect.x, y: rect.y}, {x: rect.x + rect.w, y: rect.y}],
+		[{x: rect.x + rect.w, y: rect.y}, {x: rect.x + rect.w, y: rect.y + rect.h}],
+		[{x: rect.x + rect.w, y: rect.y + rect.h}, {x: rect.x, y: rect.y + rect.h}],
+		[{x: rect.x, y: rect.y + rect.h}, {x: rect.x, y: rect.y}]
+	]
+}
 
-	let xOverlap = 0
-	let yOverlap = 0
 
-	if(rect.x < edge[0].x ) xOverlap = diff.x - rect.x
-	else xOverlap = rect.x + rect.w - diff.x
-	if (rect.y < edge[0].y) yOverlap = diff.y - rect.y
-	else yOverlap = rect.y + rect.h - diff.y
+// Using the separating axis theorem to check for collision between two line segments
+const check_line_intersection = (line1: Point[], line2: Point[]): boolean => {
+	// a1 is line1 start, a2 is line1 end, b1 is line2 start, b2 is line2 end
+	const a1 = line1[0]
+	const a2 = line1[1]
+	const b1 = line2[0]
+	const b2 = line2[1]
 
-	return {x: xOverlap, y: yOverlap}
+	const line1diff = {x: a2.x - a1.x, y: a2.y - a1.y}
+	const line2diff = {x: b2.x - b1.x, y: b2.y - b1.y}
+	const dotprod = line1diff.x * line2diff.y - line1diff.y * line2diff.x
+	if (dotprod == 0) return false
+
+	const c = {x: b1.x - a1.x, y: b1.y - a1.y}
+	const t = (c.x * line2diff.y - c.y * line2diff.x) / dotprod
+	if (t < 0 || t > 1) return false
+
+	const u = (c.x * line1diff.y - c.y * line1diff.x) / dotprod
+	if (u < 0 || u > 1) return false
+
+	return true
+}
+
+
+const check_tri_rect_lines = (rect: Rect, triangle: Triangle): boolean => {
+	const edges = getEdges(triangle)
+	const rectLines = getRectLines(rect)
+	for (const edge of edges) {
+		for (const line of rectLines) {
+			if (check_line_intersection(edge, line)) return true
+			console.log(edge)
+			console.log(line)
+			console.log(check_line_intersection(edge, line))
+			console.log("\n")
+		}
+		
+	}
+	return false
+}
+
+export const rect_tri_collision = (rect: Rect, triangle: Triangle): CollisionDisplacement|null => {
+	const collision = check_tri_rect_lines(rect, triangle)
+	if (collision) {
+		const rectCenter = {x: rect.x + rect.w / 2, y: rect.y + rect.h / 2}
+		const triCenter = {x: (triangle.p1.x + triangle.p2.x + triangle.p3.x) / 3, y: (triangle.p1.y + triangle.p2.y + triangle.p3.y) / 3}
+		const diff = {x: triCenter.x - rectCenter.x, y: triCenter.y - rectCenter.y}
+		return new CollisionDisplacement(diff.x, diff.y)
+		// return new CollisionDisplacement(1, 1)
+	}
+	return null
 }
 
